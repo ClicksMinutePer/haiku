@@ -251,7 +251,7 @@ export class HaikuClient extends Client {
 			commands: [],
 			groups: [],
 			level: level,
-			
+
 			name: path.basename(commandPath),
 			description: "No description",
 			aliases: [],
