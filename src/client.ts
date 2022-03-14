@@ -158,7 +158,6 @@ export class HaikuClient extends Client {
 			} catch (error) {
 				return await sendErrorMessage(`It doesn't look like you can run that command right now:\n> ${error}`);
 			}
-
 			try {
 				await command.callback(interaction);
 			} catch (error) {
@@ -380,11 +379,33 @@ export class HaikuClient extends Client {
 		}
 	}
 
-	registerEvent(event: string, callback: (client: HaikuClient, ...eventData) => Promise<any>): HaikuClient {
+	async registerEventsIn(EventPath: string) {
+		if (!EventPath.startsWith("/")) EventPath = path.normalize(`${path.dirname(getCaller())}/${EventPath}`);
+
+		return await this._registerEventsIn(EventPath)
+
+	}
+
+	async _registerEventsIn(eventPath: string) {
+		let files = fs.readdirSync(eventPath, { withFileTypes: true }).filter(file =>
+            file.name.endsWith(".js") ||
+			file.name.endsWith(".mjs") ||
+			file.name.endsWith(".cjs"));
+
+		for (let file of files) {
+			const event = await import(path.join(eventPath, file.name)) as { event?: string, once?: boolean, callback: (client: Client, ...eventData) => Promise<any> };
+			this.registerEvent(event.event ?? file.name, event.callback, event.once ?? false);
+		}
+	}
+
+	registerEvent(event: string, callback: (client: HaikuClient, ...eventData) => Promise<any>, once: boolean=false): HaikuClient {
 		if (event === undefined || callback === undefined) return this;
+
+		// console.log({event, callback, once});
 
 		this.on(event, async (...eventData) => {
 			try {
+				// console.log(eventData);
 				await callback(this, ...eventData);
 			} catch (error) {
 				this._error(error);
