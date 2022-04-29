@@ -231,10 +231,10 @@ export class HaikuClient extends Client {
 
 
 	async _registerCommandsIn(commandPath: string, level = 0, defaultCheck = null): Promise<CommandLevel> {
-		let files = fs.readdirSync(commandPath, { withFileTypes: true }).filter(file => 
-            file.name.endsWith(".js") || 
-			file.name.endsWith(".mjs") || 
-			file.name.endsWith(".cjs") || 
+		let files = fs.readdirSync(commandPath, { withFileTypes: true }).filter(file =>
+            file.name.endsWith(".js") ||
+			file.name.endsWith(".mjs") ||
+			file.name.endsWith(".cjs") ||
 			file.isDirectory());
 
 		if (files.length === 0) {
@@ -278,7 +278,7 @@ export class HaikuClient extends Client {
 				}
 				if (commandBuilderType === undefined) continue;
 
-				let { command, check, callback, aliases, autocompleter } = await import(path.join(commandPath, file.name));
+				let { command, check, callback, aliases, autocompletion } = await import(path.join(commandPath, file.name));
 
 				commands.commands.push(
 					{
@@ -286,7 +286,8 @@ export class HaikuClient extends Client {
 						check: wrapDefaultCheck(check, defaultCheck),
 						callback: callback,
 						aliases: aliases,
-						autocompleter: autocompleter
+						autocompletion: autocompletion,
+                        comment: path.join(commandPath, file.name)
 					}
 				)
 
@@ -327,11 +328,19 @@ export class HaikuClient extends Client {
 				.setDescription(group.description)
 
 			for (let subcommand of group.commands) {
-				let resolvedSubcommand: ResolvedSubcommand = {
-					...subcommand,
-					command: (subcommand.command as SubcommandBuilderMethod)(new SlashCommandSubcommandBuilder())
-				}
-				this.commands.set(`${group.name} ${resolvedSubcommand.command.name}`, resolvedSubcommand);
+                let resolvedSubcommand: ResolvedSubcommand;
+                try {
+                    resolvedSubcommand = {
+                        ...subcommand,
+                        command: (subcommand.command as SubcommandBuilderMethod)(new SlashCommandSubcommandBuilder())
+                    }
+
+                    this.commands.set(`${group.name} ${resolvedSubcommand.command.name}`, resolvedSubcommand);
+                } catch (e) {
+                    this._error(`Failed to register a command in ${group.name} (${subcommand.comment})`);
+                    this._error(e);
+                    continue;
+                }
 				command.addSubcommand(resolvedSubcommand.command);
 			}
 
@@ -341,12 +350,19 @@ export class HaikuClient extends Client {
 					.setDescription(subgroup.description);
 
 				for (let subcommand of subgroup.commands) {
-					let resolvedSubcommand: ResolvedSubcommand = {
-						...subcommand,
-						command: (subcommand.command as SubcommandBuilderMethod)(new SlashCommandSubcommandBuilder())
-					}
-	
-					this.commands.set(`${group.name} ${subgroup.name} ${resolvedSubcommand.command.name}`, subcommand);
+                    let resolvedSubcommand: ResolvedSubcommand;
+                    try {
+                        resolvedSubcommand = {
+                            ...subcommand,
+                            command: (subcommand.command as SubcommandBuilderMethod)(new SlashCommandSubcommandBuilder())
+                        }
+
+                        this.commands.set(`${group.name} ${subgroup.name} ${resolvedSubcommand.command.name}`, subcommand);
+                    } catch (e) {
+                        this._error(`Failed to register a command in ${group.name} ${subgroup.name} (${subcommand.comment})`);
+                        this._error(e);
+                        continue;
+                    }
 					groupBuilder.addSubcommand(resolvedSubcommand.command);
 				}
 
@@ -355,7 +371,7 @@ export class HaikuClient extends Client {
 
 			registered.push(command);
 		}
-		
+
 		this._HTTPRegisterCommands(registered);
 	}
 

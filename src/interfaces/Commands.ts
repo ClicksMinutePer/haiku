@@ -4,12 +4,13 @@ import {ApplicationCommandOptionChoice, AutocompleteInteraction, Base, CommandIn
 export interface BaseCommandPart {
 	check: WrappedCheck;
 	aliases: string[];
+    comment?: string;
 }
 
 export interface BaseCommand extends BaseCommandPart {
-	command: SlashCommandBuilder | SubcommandBuilderMethod | SlashCommandSubcommandBuilder;	
+	command: SlashCommandBuilder | SubcommandBuilderMethod | SlashCommandSubcommandBuilder;
 	callback: (interaction: CommandInteraction) => any | Promise<any>;
-	autocompleter: (interaction: AutocompleteInteraction) => ApplicationCommandOptionChoice[] | Promise<ApplicationCommandOptionChoice[]> | any;
+	autocompletion: (interaction: AutocompleteInteraction) => ApplicationCommandOptionChoice[] | Promise<ApplicationCommandOptionChoice[]> | any;
 }
 
 export interface Command extends BaseCommand {
@@ -31,7 +32,7 @@ export interface ResolvedSubcommand extends BaseCommand {
 export interface CommandLevel extends BaseCommandPart {
 	commands: Command[] | Subcommand[];
 	groups: CommandLevel[];
-	level: number;	
+	level: number;
 
 	name?: string;
 	description?: string;

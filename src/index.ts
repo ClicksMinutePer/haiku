@@ -1,4 +1,7 @@
+import * as FlowTypes from "./builtins/flows/types.js";
+
 export {HaikuClient} from "./client.js";
 export {HaikuPaginator} from "./paginator.js";
 export {HaikuUI} from "./ui.js";
-export {HaikuFlows} from "./builtins/flows";
+export {Flow} from "./builtins/flows/index.js";
+export {FlowTypes};
