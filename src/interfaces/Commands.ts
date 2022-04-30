@@ -52,6 +52,12 @@ export interface WrappedCheck extends Check {
 
 export function wrapDefaultCheck (check: Check, defaultCheck: WrappedCheck) : WrappedCheck {
 	return async (interaction: CommandInteraction) => {
-		return await check(interaction, defaultCheck);
+        defaultCheck = defaultCheck || (async (_: CommandInteraction) => true);
+
+        if (check !== undefined) {
+    		return await check(interaction, defaultCheck);
+        } else {
+            return await defaultCheck(interaction);
+        }
 	}
 }

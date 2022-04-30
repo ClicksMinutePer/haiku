@@ -150,7 +150,7 @@ export class HaikuClient extends Client {
 			}
 
 			try {
-				let hasPermission = await command.check(interaction);
+				let hasPermission = typeof command.check !== "function" || await command.check(interaction);
 
 				if (!hasPermission) {
 					return await sendErrorMessage("You don't have permission to run this command");
@@ -429,6 +429,20 @@ export class HaikuClient extends Client {
 		});
 		return this;
 	}
+
+    async registerTasksIn(taskPath: string) {
+        if (!taskPath.startsWith("/")) taskPath = path.normalize(`${path.dirname(getCaller())}/${taskPath}`);
+
+        try {
+            const taskFiles = fs.readdirSync(taskPath).filter(file => file.endsWith('.js'));
+            for (const file of taskFiles) {
+                const task = await import(`${taskPath}/${file}`) as {time: string | null, default: (client: Client) => Promise<any>};
+                this.registerTask(task.time, task.default);
+            }
+        } catch (e) {
+            console.log(`Unable to load tasks: ${e}`);
+        }
+    }
 
 	/**
 	 * @param time The time to run the task at, either null to run immediately on bot startup or a cron string
