@@ -1,16 +1,16 @@
-import { CommandInteraction, Interaction, MessageComponentInteraction, MessageEmbed } from 'discord.js';
+import { ButtonInteraction, CommandInteraction, Interaction, MessageComponentInteraction, MessageEmbed } from 'discord.js';
 import Answers, { Answer } from './answers.js';
 import { UIShownError, UserCancelled } from './errors.js';
 import { FlowInteraction } from './flowInteraction.js';
 import { FlowQuestion } from './question.js';
 
 export default class Flow {
-    interaction: any;
+    interaction: CommandInteraction | MessageComponentInteraction;
     questions: any[];
     shown: boolean = false;
     _results: Answers = undefined;
 
-    constructor(interaction: CommandInteraction) {
+    constructor(interaction: CommandInteraction | MessageComponentInteraction) {
         this.interaction = interaction;
         this.questions = [] as FlowQuestion[];
     }
@@ -26,7 +26,7 @@ export default class Flow {
      *
      * @returns The flow object (for chaining)
      */
-    async show(): Promise<Flow> {
+    async show(ephemeral = false): Promise<Flow> {
         if (this.shown) throw new UIShownError('Cannot show a flow twice')
         this.shown = true;
         /*
@@ -41,7 +41,7 @@ export default class Flow {
             dependsOn: (answers: FlowAnswer[]) => boolean
         }
         */
-        this._results = await this._show(this.questions);
+        this._results = await this._show(this.questions, null, null, undefined, ephemeral);
 
 
         let embed = new MessageEmbed()
@@ -72,7 +72,7 @@ export default class Flow {
         return this;
     }
 
-    private async _show(questions: FlowQuestion[], answers: Answers = null, thisSectionAnswers: Answers = null, parentAnswer: any = undefined): Promise<Answers> {
+    private async _show(questions: FlowQuestion[], answers: Answers = null, thisSectionAnswers: Answers = null, parentAnswer: any = undefined, ephemeral = false): Promise<Answers> {
         if (answers === null) answers = thisSectionAnswers = {};
         for (const question of questions) {
 
@@ -96,10 +96,11 @@ export default class Flow {
                         past_answers: thisSectionAnswers,
                         allows_multiple: question.multiple,
                         allows_skipping: !question.required,
+                        ephemeral
                     }
                 )
                 try {
-                    const [answer, interaction] = await question.type.send(this.interaction, []);
+                    const [answer, interaction] = await question.type.send(this.interaction as FlowInteraction, []);
                     answerAndMeta = { name: question.name, value: answer, children: {} };
                     this.interaction = interaction;
 

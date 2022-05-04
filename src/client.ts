@@ -417,7 +417,7 @@ export class HaikuClient extends Client {
 	registerEvent(event: string, callback: (client: HaikuClient, ...eventData) => Promise<any>, once: boolean=false): HaikuClient {
 		if (event === undefined || callback === undefined) return this;
 
-		// console.log({event, callback, once});
+		console.log({event, callback, once});
 
 		this.on(event, async (...eventData) => {
 			try {

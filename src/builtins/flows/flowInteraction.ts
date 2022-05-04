@@ -1,4 +1,4 @@
-import { Message, CommandInteraction, MessagePayload, InteractionReplyOptions, MessageActionRow, MessageActionRowOptions, Client, MessageEmbed, BaseMessageComponentOptions, Interaction, MessageButton } from "discord.js";
+import { Message, CommandInteraction, MessagePayload, InteractionReplyOptions, MessageActionRow, MessageActionRowOptions, Client, MessageEmbed, BaseMessageComponentOptions, Interaction, MessageButton, MessageComponentInteraction } from "discord.js";
 import { APIMessage, ApplicationCommandType, GatewayInteractionCreateDispatchData } from "discord-api-types";
 import { UserSkipped, UserDone, TimeoutError, UserCancelled } from "./errors.js";
 
@@ -12,6 +12,7 @@ export interface FlowInteractionData {
     past_answers: PastFlowAnswers;
     allows_multiple: boolean;
     allows_skipping: boolean;
+    ephemeral: boolean;
 }
 
 /*
@@ -41,7 +42,7 @@ export class FlowInteraction extends CommandInteraction {
     }
 
 
-    static fromInteractionAndFlowData = (interaction: CommandInteraction, interactionData: FlowInteractionData): FlowInteraction => {
+    static fromInteractionAndFlowData = (interaction: CommandInteraction | MessageComponentInteraction | FlowInteraction, interactionData: FlowInteractionData): FlowInteraction => {
         /*return new this(interactionData, interaction.client, { type: interaction.type, id: interaction.id, data: {
             id: interaction.commandId,
             name: interaction.commandName,
@@ -210,7 +211,8 @@ export class FlowInteraction extends CommandInteraction {
                 let message = await this.reply({
                     embeds: [embed],
                     components: components,
-                    fetchReply: fetchReply
+                    fetchReply: fetchReply,
+                    ephemeral: this.FlowData.ephemeral
                 }) as unknown as Message;
                 if (fetchReply) {
                     this._message = message;
@@ -223,14 +225,16 @@ export class FlowInteraction extends CommandInteraction {
                 message = await this.followUp({
                     embeds: [embed],
                     components: components,
-                    fetchReply: fetchReply
+                    fetchReply: fetchReply,
+                    ephemeral: this.FlowData.ephemeral
                 });
             } else {
                 await this.deferReply();
                 message = await this.followUp({
                     embeds: [embed],
                     components: components,
-                    fetchReply: fetchReply
+                    fetchReply: fetchReply,
+                    ephemeral: this.FlowData.ephemeral
                 });
             }
             if (fetchReply) {

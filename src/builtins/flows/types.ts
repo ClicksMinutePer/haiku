@@ -1,14 +1,14 @@
 import { APIMessage } from 'discord-api-types';
-import { CommandInteraction, GuildChannel, GuildTextBasedChannel, Interaction, Message, MessageActionRow, MessageActionRowOptions, MessageSelectMenu, SelectMenuInteraction } from 'discord.js';
+import { CommandInteraction, GuildChannel, GuildTextBasedChannel, Interaction, Message, MessageActionRow, MessageActionRowOptions, MessageComponentInteraction, MessageSelectMenu, SelectMenuInteraction } from 'discord.js';
 import { HaikuClient } from '../..';
 import { FlowInteraction } from './flowInteraction';
 
 export abstract class FlowType {
-    abstract send(interaction: FlowInteraction, selected: any[]): Promise<[any, Interaction]>;
+    abstract send(interaction: FlowInteraction, selected: any[]): Promise<[any, CommandInteraction | MessageComponentInteraction | FlowInteraction]>;
 }
 
 export class STRING extends FlowType {
-    async send(interaction: FlowInteraction, selected: any[]): Promise<[any, Interaction]> {
+    async send(interaction: FlowInteraction, selected: any[]): Promise<[any, FlowInteraction]> {
         console.log("Sending a string question");
         await interaction.setComponents({
             action: "type your response",
@@ -31,7 +31,7 @@ export class ENUM extends FlowType {
         this.options = options;
     }
 
-    async send(interaction: FlowInteraction, selected: any[]): Promise<[any, Interaction]> {
+    async send(interaction: FlowInteraction, selected: any[]): Promise<[any, MessageComponentInteraction]> {
         let message = await interaction.setComponents({
             action: "select an option",
             newReply: false,
@@ -51,7 +51,7 @@ export class ENUM extends FlowType {
 
         console.log("Select menu interaction got", selectInteraction);
 
-        return [selectInteraction.values[0], interaction];
+        return [selectInteraction.values[0], selectInteraction];
     }
 }
 
@@ -68,7 +68,7 @@ class BIGINT extends FlowType {
 }*/
 
 export class TEXTCHANNEL extends STRING {
-    async send(interaction: FlowInteraction, selected: any[]): Promise<[any, Interaction]> {
+    async send(interaction: FlowInteraction, selected: any[]): Promise<[any, FlowInteraction]> {
         /*
         This method gets a string and returns the channel it corresponds to; if it doesn't
         exist, it asks for another string.
@@ -96,7 +96,7 @@ export class TEXTCHANNEL extends STRING {
 }
 
 export class ROLE extends STRING {
-    async send(interaction: FlowInteraction, selected: any[]): Promise<[any, Interaction]> {
+    async send(interaction: FlowInteraction, selected: any[]): Promise<[any, FlowInteraction]> {
         /*
         This method gets a string and returns the role it corresponds to; if it doesn't
         exist, it asks for another string.
